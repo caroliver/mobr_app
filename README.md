@@ -21,7 +21,7 @@ devtools::install_github('mobiodiv/mobr')
 Once those dependencies are installed you can run the app from the R terminal using:
 
 ```r
-shiny::runGitHub("mobiodiv/mobsim_app")
+shiny::runGitHub("mobiodiv/mobsim_app", ref="shiny")
 ```
 
 ## License
