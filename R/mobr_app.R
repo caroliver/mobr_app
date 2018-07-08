@@ -1,5 +1,9 @@
 # Outside code for CSV file read in used in ui
 
+# Create empty file for session code storage
+# write(line,file="myfile",append=TRUE)
+file.create("sessionCode.csv")
+
 # Module UI function
 csvFileInput <- function(id, label = "CSV file") {
   # Create a namespace function using the provided id
@@ -45,7 +49,7 @@ csvFile <- function(input, output, session, stringsAsFactors = TRUE) {
 # User Interface using Shiny Dashboard
 ui <- dashboardPage(
   # Title for upper left hand corner (above sidebar)
-  dashboardHeader(title = "MoB-R"),
+  dashboardHeader(title = "mobr app"),
 
   # Initalize and name tabs in the sidebar
   dashboardSidebar(
@@ -57,7 +61,7 @@ ui <- dashboardPage(
         menuSubItem("All MoB Metrics", tabName = "all_mob_tab", icon = icon("angle-right")),
         menuSubItem("Individual MoB Metrics", tabName = "ind_mob_tab", icon = icon("angle-right"))),
       menuItem("Delta Stats", tabName = "delta_stats", icon = icon("angle-right")),
-      menuItem("MoB-R GitHub Page", icon = icon("github"), 
+      menuItem("mobr GitHub Page", icon = icon("github"), 
                href = "https://github.com/MoBiodiv/mobr"),
       menuItem("Got an Issue? Submit it!", icon = icon("exclamation-triangle"), 
                href = "https://github.com/MoBiodiv/mobr/issues")
@@ -69,13 +73,14 @@ ui <- dashboardPage(
   # Each 'tabItem' is labled with is corresponding sidebar tab name using a comment
   dashboardBody(
     
+    tags$script(HTML("$('body').addClass('fixed');")), 
     
     tabItems(
       
       # Home tab content
       tabItem(tabName = "Home",
-              h2("Welcome to the MoB-R App!"),
-              h4("NOTE: Graphics work best if viewed in full window OR when side panel is closed"),
+              h2("Welcome to the Measurement of Biodiversity in R (mobr) App!"),
+              h4("NOTE: Graphics and download features work best if a browser is opened to run the application"),
               fluidRow(
               # Instructions for navigating the MoB-R app detailed in this first box
               box(
@@ -115,14 +120,14 @@ ui <- dashboardPage(
                 
                 # br() stands for break line in code
                 br(),
-                "The last two tabs represent links to the MoB-R Github page",
+                "The last two tabs represent links to the mobr Github page",
                 br(),
                 h3(icon("github")),
-                "If you want to learn more about MoB-R fromthe source check out the first link. It will take you to MoB-R's main GitHub page.",
+                "If you want to learn more about mobr from the source check out the first link. It will take you to mobr's main GitHub page.",
                 br(),
                 br(),
                 h4(icon("exclamation-triangle")),
-                "If you run into a problem while using this app, please let the developers know! Use the second link to navigate to the issues page on the MoB-R GitHub.",
+                "If you run into a problem while using this app, please let the developers know! Use the second link to navigate to the issues page on the mobr GitHub.",
                 br(),
                 "There you can submit an issue describing your problem. We appreciate your feedback!"
               )
@@ -133,7 +138,7 @@ ui <- dashboardPage(
                   # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
                   width = 4,
                   # Heading for the box - name preceded by icon of a small group of people or 'users'
-                  h3(icon("users"), "The people behind MoB-R:"),
+                  h3(icon("users"), "The people behind mobr:"),
                   tags$b("Author and Creator: "),
                   # br() stands for break line in code
                   br(),
@@ -145,7 +150,7 @@ ui <- dashboardPage(
                   br(),
                   "Felix May - email: felix.may@idiv.de",
                   br(),
-                  "Caroline Oliver - email: olivercs@g.cofc.edu"
+                  "Thor Engel - email: thore.engel@idiv.de"
                 )
               )
       ),
@@ -158,14 +163,47 @@ ui <- dashboardPage(
               h2("Enter your data below in CSV file format:"),
               
               # csvFileInput command for Community Matrix Data
-              csvFileInput("comm", "Upload community data"),
+              csvFileInput("comm", "Upload Community Matrix Data"),
               
               # Horizontal line ----
               tags$hr(),
               
               # csvFileInput command for Plot Attribute Data
-              csvFileInput("plot_attr", "Upload plot attribute data")
+              csvFileInput("plot_attr", "Upload Plot Attribute Data"),
+              br(),
+              br(),
               
+              box(
+                h2(icon("file"), "Sample Data"),
+                
+                width = 7,
+                
+                # br() stands for break line in code
+                br(),
+                "If you do not have any data of your own or would just like to see how this application works you can download sample data from the mobr_app github data page.",
+                br(),
+                br(),
+                
+                h3("Steps to get Sample Data:"),
+                
+                "1. Click on each of the following links to be directed to sample community matrix & plot attribute data:",
+                br(),
+                br(),
+                a("Community Matrix Data", href="https://github.com/MoBiodiv/mobr_app/blob/master/data/inv_comCSV.csv"),
+                br(),
+                a("Plot Attributes Data", href="https://github.com/MoBiodiv/mobr_app/blob/master/data/inv_plotCSV.csv"),
+                br(),
+                br(),
+                
+                "2. While at each of the above links, right click the 'raw' button located on the right side of the page just above the data preview.",
+                br(),
+                br(),
+                "3. Select the 'Download Linked File As...' option to save the data as a CSV file at the location of your choice.",
+                br(),
+                br(),
+                "4. Select the 'Browse' option for each of the data entry sections above and upload the community matrix & plot attribute data you retrieved from the above steps."
+                
+              )
       ),
       
 ########################################################################################################################         
@@ -183,6 +221,7 @@ ui <- dashboardPage(
               # each 'tabPanel' represents a difference exploratory graph
               fluidRow(
                 tabBox(
+                  id = "EAtab",
                   # Title of the box
                   title = "Exploratory Analysis",
                   
@@ -213,9 +252,15 @@ ui <- dashboardPage(
                 )
               ),
               
-              # Second/bottom box on Exploratory Analysis tab that displays code used to create graphs
+              fluidRow(
+                box(title = "Download All Exploratory Analysis Plots",
+                    downloadButton(outputId = "EAplots", label = "Download Plots"))
+              ),
+              
+              # Third/bottom box on Exploratory Analysis tab that displays code used to create graphs
               fluidRow(
                 tabBox(
+                  id = "EACtab",
                   # Title of the box
                   title = "Exploratory Analysis Code",
                   
@@ -273,7 +318,12 @@ ui <- dashboardPage(
                   withSpinner(plotOutput('mob_all', height = "695px"))
                 ),
                 
-                # Second/bottom box that displays code for all MoB Metric graph
+                fluidRow(
+                  box(title = "Download All MoB Metrics Plot",
+                      downloadButton(outputId = "AllMoBMetricsPlot", label = "Download Plot"))
+                ),
+                
+                # Third/bottom box that displays code for all MoB Metric graph
                 fluidRow(
                   box(
                     # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
@@ -324,6 +374,12 @@ ui <- dashboardPage(
                   tabPanel("S_PIE", withSpinner(plotOutput('mob_Spie')))
                 )
               ),
+              
+              fluidRow(
+                box(title = "Download Individual MoB Metrics Plots",
+                    downloadButton(outputId = "IndividualMoBMetricsPlots", label = "Download Plots"))
+              ),
+              
               fluidRow(
                 # Statistical output for GROUPS STATS
                 box(
@@ -429,6 +485,12 @@ ui <- dashboardPage(
                   
                 )
               ),
+              
+              fluidRow(
+                box(title = "Download Delta Stats Graph",
+                    downloadButton(outputId = "DeltaStatsPlot", label = "Download Plot"))
+              ),
+              
               
               # DOWNLOAD BUTTON BOXES
               fluidRow(
@@ -540,6 +602,31 @@ server <- function(input, output) {
   })
   
   
+  output$EAplots <- downloadHandler(
+    filename = function() {
+      "ExploratoryAnalysisPlots.pdf"
+    },
+    content = function(file) {
+      pdf(file)
+      print(
+        plot_rarefaction(mob_in(), 'group', 'spat', lwd = 4, leg_loc = 'topright')
+        )
+      print(
+        plot_rarefaction(mob_in(), 'group', 'indiv', pooled = F, lwd = 2)
+        ) 
+      print(
+        plot_rarefaction(mob_in(), 'group', 'indiv', pooled = T, lwd = 2)
+      )
+      print(
+        plot_abu(mob_in(), 'group', type = 'rad', pooled = F, log='x')
+      )
+      print(
+        plot_abu(mob_in(), 'group', type = 'rad', pooled = T, log='x')
+      )
+      dev.off()
+    }
+  )   
+  
 ######################################################################################################################## 
                                       # EXPLORITORY ANALYSIS CODE OUTPUT #
   
@@ -620,6 +707,40 @@ server <- function(input, output) {
     plot(mob_stats(), multi_panel = TRUE)
   })
   
+  output$AllMoBMetricsPlot <- downloadHandler(
+    filename = function() {
+      "AllMoBMetricsPlot.pdf"
+    },
+    content = function(file) {
+      pdf(file)
+      print(
+        plot(mob_stats(), multi_panel = TRUE)
+        )
+      dev.off()
+    }
+  )
+  
+  output$IndividualMoBMetricsPlots <- downloadHandler(
+    filename = function() {
+      "IndividualMoBMetricsPlots.pdf"
+    },
+    content = function(file) {
+      pdf(file)
+      print(
+        plot(mob_stats(), 'S')
+      )
+      print(
+        plot(mob_stats(), 'N')
+      ) 
+      print(
+        plot(mob_stats(), 'S_n')
+      )
+      print(
+        plot(mob_stats(), 'S_PIE')
+      )
+      dev.off()
+    }
+  )
   
 ######################################################################################################################## 
                                         # MOB METRIC STATISTICAL OUTPUT # 
@@ -746,6 +867,19 @@ server <- function(input, output) {
     plot(delta_stats(), 'invaded', 'uninvaded')
     
   })
+  
+  output$DeltaStatsPlot <- downloadHandler(
+    filename = function() {
+      "DeltaStatsPlot.pdf"
+    },
+    content = function(file) {
+      pdf(file)
+      print(
+        plot(delta_stats(), 'invaded', 'uninvaded')
+      )
+      dev.off()
+    }
+  )
 
 ######################################################################################################################## 
                                    # DOWNLOAD BUTTONS FOR DELTA STATS STATISTICS #     
