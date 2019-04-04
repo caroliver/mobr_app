@@ -1,8 +1,11 @@
+# install_github('MoBiodiv/mobr', ref = 'dev')
 library(mobr)
 library(shiny)
 library(shinydashboard)
 library(shinyjqui)
 library(shinycssloaders)
+library(RCurl)
+library(rmarkdown)
 
 # Outside code for CSV file read in used in ui
 
@@ -61,16 +64,18 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(style = "position: fixed; overflow: visible;",
       menuItem("Home", tabName = "Home", icon = icon("home")),
-      menuItem("Data Tab", tabName = "DataTab", icon = icon("table")),
-      menuItem("Exploratory Analysis", tabName = "exploritory_analysis", icon = icon("angle-right")),
-      menuItem("MoB Metrics", tabName = "mob_metrics", icon = icon("angle-right"),
-        menuSubItem("All MoB Metrics", tabName = "all_mob_tab", icon = icon("angle-right")),
-        menuSubItem("Individual MoB Metrics", tabName = "ind_mob_tab", icon = icon("angle-right"))),
+      menuItem("Data Input", tabName = "DataInput", icon = icon("table")),
+      menuItem("Exploritory Analysis", tabName = "exploritory_analysis", icon = icon("angle-right"),
+        menuSubItem("Rarefaction", tabName = "rare_tab", icon = icon("angle-right")),
+        menuSubItem("Abundance", tabName = "abu_tab", icon = icon("angle-right"))),
+      menuItem("MoB Metrics", tabName = "mob_tab", icon = icon("angle-right")),
       menuItem("Delta Stats", tabName = "delta_stats", icon = icon("angle-right")),
       menuItem("mobr GitHub Page", icon = icon("github"), 
                href = "https://github.com/MoBiodiv/mobr"),
-      menuItem("Got an Issue? Submit it!", icon = icon("exclamation-triangle"), 
-               href = "https://github.com/MoBiodiv/mobr/issues")
+      menuItem("Submit a CODE Issue", icon = icon("exclamation-triangle"), 
+               href = "https://github.com/MoBiodiv/mobr/issues"),
+      menuItem("Submit an APP Issue", icon = icon("exclamation-triangle"), 
+               href = "https://github.com/MoBiodiv/mobr_app/issues")
     )
   ),
   
@@ -85,11 +90,11 @@ ui <- dashboardPage(
       
       # Home tab content
       tabItem(tabName = "Home",
-              h2("Welcome to the Measurement of Biodiversity in R (mobr) App!"),
-              h4("NOTE: Graphics and download features work best if a browser is opened to run the application"),
+              h2("Measurement of Biodiversity Shiny App"),
               fluidRow(
-              # Instructions for navigating the MoB-R app detailed in this first box
+              # Instructions for navigating the mobr app detailed in this first box
               box(
+                status = "primary",
             
                 # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
                 width = 6,
@@ -99,12 +104,12 @@ ui <- dashboardPage(
                 
                 # br() stands for break line in code
                 br(),
-                h4(icon("table"),"DataTab"),
-                "- Where you will enter you Community Matrix and Plot Data as CSV files", 
+                h4(icon("table"),"DataInput"),
+                "- Where you will enter your community matrix and plot data as csv files", 
                 br(), 
                 br(), 
-                h4(icon("angle-right"),"Plot Rarefaction"),
-                "- Graphs and Code for Plot Rarefaction data",
+                h4(icon("angle-right"),"Exploratory Analysis"),
+                "- Graphs and Code for Exploratory Analysis data",
                 br(),
                 br(), 
                 h4(icon("angle-right"),"MoB Metrics"),
@@ -118,45 +123,63 @@ ui <- dashboardPage(
               ),
               # Box detailing the link tabs and how best to use them
               box(
-                
+                status = "primary",
                 # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
                 width = 5,
                 # Heading for the box - name preceded by icon of a link
                 h3(icon("link"), "Link Tabs"),
-                
                 # br() stands for break line in code
                 br(),
-                "The last two tabs represent links to the mobr Github page",
-                br(),
                 h3(icon("github")),
-                "If you want to learn more about mobr from the source check out the first link. It will take you to mobr's main GitHub page.",
+                "If you want to learn more about mobr from the source check out the first link tab 'mobr Github Page'. It will take you to mobr's main GitHub page.",
                 br(),
                 br(),
                 h4(icon("exclamation-triangle")),
-                "If you run into a problem while using this app, please let the developers know! Use the second link to navigate to the issues page on the mobr GitHub.",
+                "If you run into a problem with the underlying code or the application itself, please let the developers know:",
                 br(),
-                "There you can submit an issue describing your problem. We appreciate your feedback!"
+                br(),
+                "- Use the 'Submit a CODE Issue' button to submit an issue with the underlying application code.",
+                br(),
+                "- Use the 'Submit an APP Issue' button to submit an issue with the application itself.",
+                br(),
+                br(),
+                "We appreciate your feedback!"
               )
               ),
               fluidRow(
-                # Box giving credit to authors of MoB-R/the MoB-R app
+                # Box giving credit to authors of mobr/the mobr app
                 box(
+                  status = "primary",
                   # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
                   width = 4,
                   # Heading for the box - name preceded by icon of a small group of people or 'users'
                   h3(icon("users"), "The people behind mobr:"),
-                  tags$b("Author and Creator: "),
+                  tags$b("Primary Author: "),
                   # br() stands for break line in code
-                  br(),
-                  "Xiao Xiao - email: xiao@weecology.org",
-                  br(),
-                  tags$b("Authors: "),
                   br(),
                   "Daniel McGlinn - email: danmcglinn@gmail.com",
                   br(),
+                  br(),
+                  tags$b("Secondary Authors: "),
+                  br(),
+                  "Xiao Xiao - email: xiao@weecology.org",
+                  br(),
                   "Felix May - email: felix.may@idiv.de",
                   br(),
-                  "Thor Engel - email: thore.engel@idiv.de"
+                  "Thor Engel - email: thore.engel@idiv.de",
+                  br(),
+                  "Caroline Oliver - email: olivercs@g.cofc.edu"
+                  ),
+                
+                box(
+                  status = "primary",
+                  width = 4,
+                  h3(icon("users"), "R Markdown File Generator"),
+                  #radioButtons('format', 'Document format', c('PDF', 'HTML', 'Word'), inline = TRUE),
+                  downloadButton("report", "Generate report"),
+                  br(),
+                  br(),
+                  h4('Please note that the creation of the file may take a few minutes to complete.')
                 )
               )
       ),
@@ -164,314 +187,215 @@ ui <- dashboardPage(
 ######################################################################################################################## 
                                     # Data tab content #
 
-      tabItem(tabName = "DataTab",
+      tabItem(tabName = "DataInput",
               # Heading for main body of tab
-              h2("Enter your data below in CSV file format:"),
-              
-              # csvFileInput command for Community Matrix Data
-              csvFileInput("comm", "Upload Community Matrix Data"),
-              
-              # Horizontal line ----
-              tags$hr(),
-              
-              # csvFileInput command for Plot Attribute Data
-              csvFileInput("plot_attr", "Upload Plot Attribute Data"),
-              br(),
-              br(),
-              
-              box(
-                h2(icon("file"), "Sample Data"),
-                
-                width = 7,
-                
-                # br() stands for break line in code
-                br(),
-                "If you do not have any data of your own or would just like to see how this application works you can download sample data from the mobr_app github data page.",
-                br(),
-                br(),
-                
-                h3("Steps to get Sample Data:"),
-                
-                "1. Click on each of the following links to be directed to sample community matrix & plot attribute data:",
-                br(),
-                br(),
-                a("Community Matrix Data", href="https://github.com/MoBiodiv/mobr_app/blob/master/data/inv_comCSV.csv"),
-                br(),
-                a("Plot Attributes Data", href="https://github.com/MoBiodiv/mobr_app/blob/master/data/inv_plotCSV.csv"),
-                br(),
-                br(),
-                
-                "2. While at each of the above links, right click the 'raw' button located on the right side of the page just above the data preview.",
-                br(),
-                br(),
-                "3. Select the 'Download Linked File As...' option to save the data as a CSV file at the location of your choice.",
-                br(),
-                br(),
-                "4. Select the 'Browse' option for each of the data entry sections above and upload the community matrix & plot attribute data you retrieved from the above steps."
-                
-              )
-      ),
-      
-########################################################################################################################         
-                                       # Exploratory Analysis tab content #      
-      
-      tabItem(tabName = "exploritory_analysis",
-              
-              # Heading for main body of tab
-              h2("Exploratory Analysis"),
-              
-              # sub- heading deatiling abreviation meanings
-              h4("SR = Spacial Rarefaction, IR = Indiviudal Rarefaction, Abu = Abundance"),
-              
-              # First/top box on Exploratory Analysis tab that displays graphs
-              # each 'tabPanel' represents a difference exploratory graph
               fluidRow(
-                tabBox(
-                  id = "EAtab",
-                  # Title of the box
-                  title = "Exploratory Analysis",
+                
+                box(
+                  status = "primary",
+                  h2("Choose your data type below:"),
                   
-                  # 'Side' represents what orientation you would like the box to be in (left, right, center)
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  side = "left", width = "10",
+                  selectInput("sample_data",
+                              label = "Select Data Input Type:",
+                              choices = list("Use Sample Data" = 'TRUE',"Use Personal Data" = 'FALSE'),
+                              selected = 'FALSE'),
                   
-                  # Initially select far left tab to be displayed first
-                  selected = "SR",
-                  
-                  # the first parameter in quotation marks represents the graph type
-                  # the plotOutput funtion parameter corresponds to the name of an output code that creates the plot in the server portion of the app
-                  
-                  # Species Rarefaction Graph
-                  tabPanel("SR", withSpinner(plotOutput('s_rare'))),
-                  
-                  # Individual Rarefaction Graph - UNPOOLED
-                  tabPanel("IR Unpooled", withSpinner(plotOutput('i_rare_up'))),
-                  
-                  # Individual Rarefaction Graph - POOLED
-                  tabPanel("IR Pooled", withSpinner(plotOutput('i_rare_p'))),
-                  
-                  # Species Abundance Graph - UNPOOLED
-                  tabPanel("Unpooled Abu", withSpinner(plotOutput('up_abu'))),
-                  
-                  # Species Abundance Graph - POOLED
-                  tabPanel("Pooled Abu", withSpinner(plotOutput('p_abu')))
+                  uiOutput("conditionalInput_commData"),
+                  uiOutput("conditionalInput_plotData")
                 )
-              ),
-              
-              fluidRow(
-                box(title = "Download All Exploratory Analysis Plots",
-                    downloadButton(outputId = "EAplots", label = "Download Plots"))
-              ),
-              
-              # Third/bottom box on Exploratory Analysis tab that displays code used to create graphs
-              fluidRow(
-                tabBox(
-                  id = "EACtab",
-                  # Title of the box
-                  title = "Exploratory Analysis Code",
-                  
-                  # 'Side' represents what orientation you would like the box to be in (left, right, center)
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  side = "left", width = "10",
-                  
-                  # Initially select far left tab to be displayed first
-                  selected = "SR",
-                  
-                  # the first parameter in quotation marks represents the graph type
-                  # the htmlOutput funtion parameter corresponds to the name of an output code that diplays plot code text in the server portion of the app
-                  
-                  # Species Rarefaction Code
-                  tabPanel("SR", withSpinner(htmlOutput('s_rare_code'))),
-                  
-                  # Individual Rarefaction Code - UNPOOLED
-                  tabPanel("IR Unpooled", withSpinner(htmlOutput('ir_up_code'))),
-                  
-                  # Individual Rarefaction Code - POOLED
-                  tabPanel("IR Pooled", withSpinner(htmlOutput('ir_p_code'))),
-                  
-                  # Species Abundance Code - UNPOOLED
-                  tabPanel("Unpooled Abu", withSpinner(htmlOutput('up_abu_code'))),
-                  
-                  # Species Abundance Code - POOLED
-                  tabPanel("Pooled Abu", withSpinner(htmlOutput('p_abu_code')))
-                )
-                
-              )
+        )
       ),
 
+
 ########################################################################################################################         
-                                               # All Mob Metrics Tab #
-      
-      tabItem(tabName = "all_mob_tab",
-              
-              # Heading for main body of tab
-              h2("All MoB Metrics"),
-              
-              # First/top box that displays graph with all MoB Metric data
-              fluidRow(
-                box(
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 7,
-                  
-                  # 'Height' refers to how many pixels high your box will be (different than width implementation)
-                  height = "750px",
-                  
-                  # Title of the box
-                  title = "All MoB Metrics",
-                  
-                  # the plotOutput funtion parameter corresponds to the name of an output code that creates the plot in the server portion of the app
-                  # height of graph must be smaller (less pixels) than box height to fit appropriately
-                  withSpinner(plotOutput('mob_all', height = "695px"))
-                ),
-                
-                fluidRow(
-                  box(title = "Download All MoB Metrics Plot",
-                      downloadButton(outputId = "AllMoBMetricsPlot", label = "Download Plot"))
-                ),
-                
-                # Third/bottom box that displays code for all MoB Metric graph
-                fluidRow(
-                  box(
-                    # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                    width = 7,
-                    
-                    # Title of the box
-                    title = "All MoB Metrics Code",
-                    
-                    # the htmlOutput funtion parameter corresponds to the name of an output code that diplays plot code text in the server portion of the app
-                    withSpinner(htmlOutput('all_mob_code'))
-                  )
-                )
-              )
+                                       # Exploratory Analysis tab content #      
+
+# RAREFACTION (SUB) TAB      
+tabItem(tabName = "rare_tab",
+        
+        # Heading for main body of tab
+        h2("Rarefaction"),
+        
+        # First/top box on Exploratory Analysis tab that displays graphs
+        # each 'tabPanel' represents a difference exploratory graph
+        fluidRow(
+          box(
+            status = "primary",
+            width = 5,
+            # Title of the box
+            title = "Rarefaction Parameter Selection",
+            
+            selectInput("rare_method",
+                        label = "Select Method Type:",
+                        choices = list("Individual" = 'indiv',"Sample" = 'samp',"Spatial" = 'spat'),
+                        selected = 'indiv'),
+            
+            uiOutput("conditionalInput_rare_groupParam"),
+            
+            uiOutput("conditionalInput_choice"),
+            
+            #numericInput("dens_rat", "Density Ratio:", 1, min = -100, max = 100),
+            
+            selectInput("rare_legend",
+                        label = "Select Legend Location:",
+                        choices = list("Top Left" = 'topleft',"Bottom Left" = 'bottomleft',"Top Right" = 'topright', "Bottom Right" = 'bottomright'),
+                        selected = 'topleft'),
+            
+            actionButton("newRareModel", "Calculate Rarefaction Plot"),
+            
+            br(),
+            br(),
+            
+            h4("Download Current Plot"),
+            
+            downloadButton(outputId = "rare_plot", label = "Download Current Plot")
+            
+          ),
+          box(
+            status = "primary",
+            # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
+            width = 6,
+            
+            # 'Height' refers to how many pixels high your box will be (different than width implementation)
+            height = "750px",
+            
+            # Title of the box
+            title = "Rarefaction Plot",
+            
+            # the plotOutput funtion parameter corresponds to the name of an output code that creates the plot in the server portion of the app
+            # height of graph must be smaller (less pixels) than box height to fit appropriately
+            withSpinner(plotOutput('rarefaction_plot', height = "695px"))
+          )
+        )
+),
+
+# ABUNDANCE (SUB) TAB      
+tabItem(tabName = "abu_tab",
+        
+        # Heading for main body of tab
+        h2("Abundance"),
+        
+        # First/top box on Exploratory Analysis tab that displays graphs
+        # each 'tabPanel' represents a difference exploratory graph
+        fluidRow(
+          box(
+            status = "primary",
+            width = 5,
+            # Title of the box
+            title = "Abundance Parameter Selection",
+            
+            selectInput("abu_type",
+                        label = "Select Abundance Type:",
+                        choices = list("Species Abundance" = 'sad',"Rank Abundance" = 'rad'),
+                        selected = 'sad'),
+            
+            uiOutput("conditionalInput_abu_groupParam"),
+            
+            radioButtons("pool_abu",
+                         label = "Pooled or Unpooled:",
+                         choices = list("Pooled" = 'T',"Unpooled" = 'F'),
+                         selected = 'T'),
+            
+            selectInput("abu_legend",
+                        label = "Select Legend Location:",
+                        choices = list("Top Left" = 'topleft',"Bottom Left" = 'bottomleft',"Top Right" = 'topright', "Bottom Right" = 'bottomright'),
+                        selected = 'topleft'),
+            
+            actionButton("newAbuModel", "Calculate Abundance Plot"),
+            
+            br(),
+            br(),
+            
+            h4("Download Current Plot"),
+            
+            downloadButton(outputId = "abu_plot", label = "Download Current Plot")
+            
+          ),
+          box(
+            status = "primary",
+            # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
+            width = 6,
+            
+            # 'Height' refers to how many pixels high your box will be (different than width implementation)
+            height = "750px",
+            
+            # Title of the box
+            title = "Abundance Plot",
+            
+            # the plotOutput funtion parameter corresponds to the name of an output code that creates the plot in the server portion of the app
+            # height of graph must be smaller (less pixels) than box height to fit appropriately
+            withSpinner(plotOutput('abundance_plot', height = "695px"))
+          )
+        )
         ),
-     
-######################################################################################################################## 
-                                            # Indiviudal Mob stats tab #
-      
-      tabItem(tabName = "ind_mob_tab",
+
+########################################################################################################################         
+                                               # Mob Metrics Tab #
+# MOB METRICS TAB     
+      tabItem(tabName = "mob_tab",
               
               # Heading for main body of tab
               h2("MoB Metrics"),
               
               # First/top box that displays graph with all MoB Metric data
               fluidRow(
+                box(
+                    status = "primary",
+                    h2("MoB Metrics Paramenter Selection"),
+                    width = 4,
+                    
+                    uiOutput("conditionalInput_mob_groupParam"),
+                    
+                    #selectInput("index_param",
+                    #            label = "Select Index Type:",
+                    #            choices = list("N" = "N","S" = "S","S_n" = "S_n", "S_asymp" = "S_asymp","f_0" = "f_0","pct_rare" = "pct_rare","PIE" = "PIE","S_PIE" = "S_PIE"),
+                    #            selected = "N"),
+                    # , multiple = TRUE
+                    
+                    numericInput("effort_min_param", "Rarefied Richness Calculation Minimum # of Individuals:", 5, min = 1, max = 100000),
+                    
+                    selectInput("extrapolate_param",
+                                label = "Extrapolation:",
+                                choices = list("True" = 'TRUE',"False" = 'FALSE'),
+                                selected = 'TRUE'),
+                    
+                    uiOutput("conditionalInput_return_NA"), 
+                    
+                    numericInput("rareThres_param", "Rarefaction Threshold:", 0.05, min = 0, max = 1),
+                    
+                    numericInput("nPerm_mob_param", "Number of Permutations:", 199, min = 1, max = 100000),
+                    
+                    radioButtons("boot_groups_param",
+                                 label = "Bootstrap Group:",
+                                 choices = list("True" = 'TRUE',"False" = 'FALSE'),
+                                 selected = 'FALSE'),
+                    
+                    uiOutput("conditionalInput_conf_level"),
+                    
+                    actionButton("newMobModel", "Calculate MoB Plot"),
+                    
+                    br(),
+                    br(),
+                    
+                    
+                    h4("Download Current Plot"),
+                    
+                    downloadButton(outputId = "MobMetricsPlot", label = "Download Current Plot")
+                  ),
                 
-                # Tab Box containing MoB Metric GRAPHS
-                tabBox(
-                  title = "Individual MoB Metrics",
-                  
-                  # side = screen orientation
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  side = "left", width = "10",
-                  
-                  # Initially selected graph - observed specied richness
-                  selected = "S",
-                  
-                  # observed specied richness graph code
-                  tabPanel("S", withSpinner(plotOutput('mob_s'))),
-                  
-                  # number of individuals graph code
-                  tabPanel("N", withSpinner(plotOutput('mob_n'))),
-                  
-                  # rarefied species richness graph code
-                  tabPanel("S_n", withSpinner(plotOutput('mob_Sn'))),
-                  
-                  # effective number of species based on PIE graph
-                  tabPanel("S_PIE", withSpinner(plotOutput('mob_Spie')))
+                  tabBox(
+                    width = 8,
+                    title = "MoB Metrics Plot", height = "350px",
+                    tabPanel("N", withSpinner(plotOutput('mob_plot_N'))),
+                    tabPanel("S", withSpinner(plotOutput('mob_plot_S'))),
+                    #tabPanel("S_asymp", withSpinner(plotOutput('mob_plot_S_asymp'))),
+                    #tabPanel("f_0", withSpinner(plotOutput('mob_plot_f_0'))),
+                    tabPanel("pct_rare", withSpinner(plotOutput('mob_plot_pct_rare'))),
+                    #tabPanel("PIE", withSpinner(plotOutput('mob_plot_PIE'))),
+                    tabPanel("S_PIE", withSpinner(plotOutput('mob_plot_S_PIE')))
                 )
-              ),
-              
-              fluidRow(
-                box(title = "Download Individual MoB Metrics Plots",
-                    downloadButton(outputId = "IndividualMoBMetricsPlots", label = "Download Plots"))
-              ),
-              
-              fluidRow(
-                # Statistical output for GROUPS STATS
-                box(
-                  title = "Groups Stats",
-                  
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 4,
-                  
-                  withSpinner(verbatimTextOutput('mob_groups_stats'))
-                ),
-                # Statistical output for SAMPLE TESTS
-                box(
-                  title = "Samples Tests",
-                  
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 5,
-                  
-                  withSpinner(verbatimTextOutput('mob_samples_tests'))
-                )
-                ),
-              fluidRow(
-                # Statistical output for GROUPS TESTS
-                box(
-                  title = "Groups Tests",
-                  
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 4,
-                  
-                  withSpinner(verbatimTextOutput('mob_groups_tests'))
-                ),
-                
-                # DOWNLOAD BUTTON BOX FOR MOB METRICS
-                box(
-                  title = "Download MoB Data to CSV",
-                  
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 5,
-                  
-                  # Download button for GROUPS STATS DATA
-                  downloadButton('download_GS', "Download Groups Stats Data"),
-                  br(),
-                  br(),
-                  
-                  # Download button for SAMPLES TEST DATA
-                  downloadButton('download_ST', "Download Samples Test Data"),
-                  br(),
-                  br(),
-                  
-                  # Download button for GROUPS TESTS DATA
-                  downloadButton('download_GT', "Download Groups Tests Data"),
-                  br(),
-                  br(),
-                  
-                  # Download button for SAMPLES STATS DATA
-                  downloadButton('download_SS', "Download Samples Stats Data")
-                )
-              ),
-              fluidRow(
-                # Tab Box for MoB Metrics Code
-                tabBox(
-                  title = "MoB Metrics Code",
-                  
-                  # side = screen orientation
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  side = "left", width = 8,
-                  
-                  # Initially selected graph code - observed specied richness
-                  selected = "S",
-                  
-                  # CODE Tab Panels labeled by their type of graph
-                  
-                  # observed specied richness graph code
-                  tabPanel("S", withSpinner(htmlOutput('s_code'))),
-                  
-                  # number of individuals graph code
-                  tabPanel("N", withSpinner(htmlOutput('n_code'))),
-                  
-                  # rarefied species richness graph code
-                  tabPanel("S_n", withSpinner(htmlOutput('sn_code'))),
-                  
-                  # effective number of species based on PIE graph code
-                  tabPanel("S_PIE", withSpinner(htmlOutput('spie_code')))
-                )
-                
               )
-      ),
+        ),
       
 ######################################################################################################################## 
                                               # Delta stats tab content #
@@ -482,26 +406,77 @@ ui <- dashboardPage(
               # DELTA STATS GRAPH
               fluidRow(
                 box(
+                  status = "primary",
+                  h2("Delta Stats Paramenter Selection"),
+                  width = 4,
+                  
+                  uiOutput("conditionalInput_delta_groupParam"),
+                  
+                  #uiOutput("conditionalInput_delta_treatGroup"),
+                  
+                  selectInput("tests_param",
+                              label = "Select Test Type:",
+                              choices = list("SAD" = 'SAD',"N" = 'N',"agg" = 'agg'),
+                              selected = 'SAD', multiple = TRUE),
+                  
+                  #uiOutput("conditionalInput_minPlots"),
+                  
+                  selectInput("type_param",
+                              label = "Select Type:",
+                              choices = list("Continuous" = 'continuous',"Discrete" = 'discrete'),
+                              selected = 'discrete'),
+                  
+                  uiOutput("conditionalInput_refGroup"), 
+                  
+                  textInput("stats_param", label = "Enter Stats Value:", value = "NULL"),
+                  
+                  textInput("inds_param", label = "Enter Inds Value:", value = "NULL"),
+                  
+                  radioButtons("logScale_param",
+                               label = "Log Scale:",
+                               choices = list("True" = 'TRUE',"False" = 'FALSE'),
+                               selected = 'TRUE'),
+                  
+                  selectInput("denStat_param",
+                              label = "Select Density Statistic:",
+                              choices = list("Mean" = 'mean',"Max" = 'max',"Min" = 'min'),
+                              selected = 'mean'),
+                  
+                  numericInput("nPerm_param", "Number of Permutations:", 20, min = 1, max = 100000),
+                  
+                  radioButtons("overallP_param",
+                               label = "Overall P-value:",
+                               choices = list("True" = 'TRUE',"False" = 'FALSE'),
+                               selected = 'FALSE'),
+                  
+                  actionButton("newDeltaModel", "Calculate Delta Plot"),
+                  
+                  br(),
+                  br(),
+                  
+                  h4("Download Current Plot"),
+                  
+                  downloadButton(outputId = "DeltaStatsPlot", label = "Download Current Plot")
+                ),
+                box(
+                  status = "primary",
                   title = "Delta Stats",
                   
                   # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 8,
+                  width = 7,
                   
                   withSpinner(plotOutput('delta_plot'))
                   
                 )
               ),
               
-              fluidRow(
-                box(title = "Download Delta Stats Graph",
-                    downloadButton(outputId = "DeltaStatsPlot", label = "Download Plot"))
-              ),
-              
               
               # DOWNLOAD BUTTON BOXES
               fluidRow(
+                
                 # TEST BOX
                 box(
+                  status = "primary",
                   title = "Download Delta Stats Tests Data to CSV",
                   
                   # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
@@ -523,6 +498,7 @@ ui <- dashboardPage(
                 
                 # RAREFACTION BOX
                 box(
+                  status = "primary",
                   title = "Download Delta Stats Rarefaction Data to CSV",
                   
                   # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
@@ -536,22 +512,14 @@ ui <- dashboardPage(
                   # Sample Rarefaction Data button
                   downloadButton('download_rare_sample', "Download Sample Rarefaction Data")
                 )
-              ),
-              fluidRow(
-                # DELTA STATS CODE BOX
-                box(
-                  title = "Delta Stats Code",
-                  
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 8,
-                  
-                  withSpinner(htmlOutput('delta_code'))
-                )
               )
       )
     )
-    )
+  )
 )
+
+
+
   
 
 ######################################################################################################################## 
@@ -561,189 +529,250 @@ ui <- dashboardPage(
 server <- function(input, output) {
   
 ######################################################################################################################## 
-                              # INITIAL SET UP OF REACTIVE VARIABLES# 
+                              # SAMPLE/PERSONAL DATA UPLOAD # 
 
-  comm <- callModule(csvFile, "comm")
+  comm_data <- read.csv(text = getURL("https://raw.githubusercontent.com/caroliver/mobr_app/master/data/inv_comCSV.csv"))
+  comm_data <- comm_data[,2:ncol(comm_data)]
   
-  plot_attr <- callModule(csvFile, "plot_attr")
+  plot_data <- read.csv(text = getURL("https://raw.githubusercontent.com/caroliver/mobr_app/master/data/inv_plotCSV.csv"))
+  plot_data <- plot_data[,2:4]
   
-  mob_in <- reactive(make_mob_in(comm(), plot_attr()))
+  output$conditionalInput_rare_groupParam <- renderUI({
+    if (is.null(plot_data) == TRUE){
+      textOutput("error_message", "Please enter data in the Data Tab")
+    }
+    else{
+      selectInput("group_param_rare", "Variable Name: ", choices = colnames(plot_data))
+    }
+  })
+  
+  output$conditionalInput_abu_groupParam <- renderUI({
+    if (is.null(plot_data) == TRUE){
+      textOutput("error_message", "Please enter data in the Data Tab")
+    }
+    else{
+      selectInput("group_param_abu", "Variable Name: ", choices = colnames(plot_data))
+    }
+  })
+  
+  output$conditionalInput_mob_groupParam <- renderUI({
+    if (is.null(plot_data) == TRUE){
+      textOutput("error_message", "Please enter data in the Data Tab")
+    }
+    else{
+      selectInput("group_param_mob", "Variable Name: ", choices = colnames(plot_data))
+    }
+  })
+  
+  output$conditionalInput_delta_groupParam <- renderUI({
+    if (is.null(plot_data) == TRUE){
+      textOutput("error_message", "Please enter data in the Data Tab")
+    }
+    else{
+      selectInput("group_param_delta", "Variable Name: ", choices = colnames(plot_data))
+    }
+  })
+  
+  
+  output$conditionalInput_commData <- renderUI({
+    if(input$sample_data == 'FALSE'){
+      # csvFileInput command for Community Matrix Data
+      csvFileInput("comm", "Upload Community Matrix Data")
+    }
+  })
+  
+  output$conditionalInput_plotData <- renderUI({
+    if(input$sample_data == 'FALSE'){
+      # csvFileInput command for Plot Attribute Data
+      csvFileInput("plot_attr", "Upload Plot Attribute Data")
+    }
+  })
+  
+  mob_in <- reactive({
+    if(input$sample_data == 'TRUE'){
+      comm <- comm_data
+      plot_attr <- plot_data
+      
+      mob_in <- reactive(make_mob_in(comm, plot_attr))
+      
+    }
+    else if(input$sample_data != 'TRUE'){
+      comm <- callModule(csvFile, "comm")
+      plot_attr <- callModule(csvFile, "plot_attr")
+      
+      mob_in <- reactive(make_mob_in(comm(), plot_attr()))
+    }
+    return(mob_in())
+  })
 
-  mob_stats <- reactive(get_mob_stats(mob_in(), 'group'))
-  
-  delta_stats <- reactive(get_delta_stats(mob_in(), 'group',
-                                   ref_group = 'uninvaded',
-                                   type='discrete', 
-                                   log_scale=TRUE,
-                                   n_perm=20))
-  
+
+
   
   
 ######################################################################################################################## 
-                                       # EXPLORITORY ANALYSIS PLOT OUTPUT # 
+                                       # EXPLORITORY ANALYSIS OUTPUT # 
   
-  # Species Rarefaction GRAPH Output
-  output$s_rare <- renderPlot({
-    plot_rarefaction(mob_in(), 'group', 'spat', lwd = 4, leg_loc = 'topright')
+  # RAREFACTION
+  
+  # Rarefaction Reactive Variables
+  # Rarefaction method selection
+  rare_group_variable <- reactive({input$group_param_rare})
+  rare_method <- reactive({input$rare_method})
+  
+  # Pooled vs unpooled condidtional selection option
+  # Ability to select only shows up when the -individual- rarefaction method is chosen
+  output$conditionalInput_choice <- renderUI({
+    if(input$rare_method == 'indiv'){
+      radioButtons("pool_rare",
+                   label = "Pooled or Unpooled:",
+                   choices = list("Pooled" = 'T',"Unpooled" = 'F'),
+                   selected = 'T')
+    }
   })
   
-  # Individual Rarefaction GRAPH Output - UNPOOLED
-  output$i_rare_up <- renderPlot({
-    plot_rarefaction(mob_in(), 'group', 'indiv', pooled = F, lwd = 2)
+  # Rarefaction legend location selection
+  rare_legend <- reactive({input$rare_legend})
+  
+  # Pooled vs unpooled variable definition
+  # Takes into account if -indiviudal- rarfaction is NOT selected and sets varaible approproately
+  # Individual = pooled vs unpooled selection / Not individual = default to pooled
+  pool_rare_val <- reactive({
+    if(input$rare_method == 'indiv'){
+      pool_rare_val <- input$pool_rare
+    }else if(input$rare_method != 'indiv'){
+      pool_rare_val <- TRUE
+    }
+    return(pool_rare_val)
   })
   
-  # Individual Rarefaction GRAPH Output - POOLED
-  output$i_rare_p <- renderPlot({
-    plot_rarefaction(mob_in(), 'group', 'indiv', pooled = T, lwd = 2)
-  })
+  #rare_plot <- eventReactive(input$newRareModel, plot_rarefaction(mob_in(), rare_group_variable(),
+  #                                                               rare_method(), pooled = pool_rare_val(), 
+  #                                                               leg_loc = rare_legend()))
   
-  # Species Abundance GRAPH Output - UNPOOLED
-  output$up_abu <- renderPlot({
-    plot_abu(mob_in(), 'group', type = 'rad', pooled = F, log='x')
-  })
-  
-  # Species Abundance GRAPH Output - POOLED
-  output$p_abu <- renderPlot({
-    plot_abu(mob_in(), 'group', type = 'rad', pooled = T, log='x')
-  })
-  
-  
-  output$EAplots <- downloadHandler(
+  # Rarefaction Plot Output
+  output$rarefaction_plot <- renderPlot({plot_rarefaction(mob_in(), rare_group_variable(),
+                                                          rare_method(), pooled = pool_rare_val(), 
+                                                          leg_loc = rare_legend())})
+
+  output$rare_plot <- downloadHandler(
     filename = function() {
       "ExploratoryAnalysisPlots.pdf"
     },
     content = function(file) {
       pdf(file)
       print(
-        plot_rarefaction(mob_in(), 'group', 'spat', lwd = 4, leg_loc = 'topright')
-        )
-      print(
-        plot_rarefaction(mob_in(), 'group', 'indiv', pooled = F, lwd = 2)
-        ) 
-      print(
-        plot_rarefaction(mob_in(), 'group', 'indiv', pooled = T, lwd = 2)
-      )
-      print(
-        plot_abu(mob_in(), 'group', type = 'rad', pooled = F, log='x')
-      )
-      print(
-        plot_abu(mob_in(), 'group', type = 'rad', pooled = T, log='x')
+        plot_rarefaction(mob_in(), 'group', rare_method(), pooled = pool_rare_val(), leg_loc = rare_legend())
       )
       dev.off()
     }
   )   
   
-######################################################################################################################## 
-                                      # EXPLORITORY ANALYSIS CODE OUTPUT #
+  # ABUNDANCE
   
-  # Species Rarefaction CODE Output
-  output$s_rare_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "plot_rarefaction(mob_in, 'group', 'spat', lwd = 4, leg_loc = 'topright')")
+  # Abundance Reactive Variables
+  abu_group_variable <- reactive({input$group_param_abu})
+  abu_type <- reactive({input$abu_type})
+  pool_abu <- reactive({input$pool_abu})
+  abu_legend <- reactive({input$abu_legend})
+  
+  # Abundance Plot Output
+  output$abundance_plot <- renderPlot({
+    plot_abu(mob_in(), abu_group_variable(), type = abu_type(), pooled = pool_abu(), log='x', leg_loc = abu_legend())
   })
   
-  # Individual Rarefaction CODE Output - UNPOOLED
-  output$ir_up_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "plot_rarefaction(mob_in, 'group', 'indiv', pooled = F, lwd = 2)")
-  })
-  
-  # Individual Rarefaction CODE Output - POOLED
-  output$ir_p_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "plot_rarefaction(mob_in, 'group', 'indiv', pooled = T, lwd = 2)")
-  })
-  
-  # Species Abundance CODE Output - UNPOOLED
-  output$up_abu_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "plot_abu(mob_in, 'group', type = 'rad', pooled = F, log='x')")
-    
-  })
-  
-  # Species Abundance CODE Output - POOLED
-  output$p_abu_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "plot_abu(mob_in, 'group', type = 'rad', pooled = T, log='x')")
-    
-  })
-  
-  
+  output$abu_plot <- downloadHandler(
+    filename = function() {
+      "ExploratoryAnalysisPlots.pdf"
+    },
+    content = function(file) {
+      pdf(file)
+      print(
+        plot_abu(mob_in(), 'group', type = abu_type(), pooled = pool_abu(), log='x', leg_loc = abu_legend())
+      )
+      dev.off()
+    }
+  ) 
   
 ######################################################################################################################## 
                                              # MOB METRIC PLOT OUTPUT # 
 
-  # Species Richness GRAPH Output
-  output$mob_s <- renderPlot({
-      plot(mob_stats(), 'S')
-  })
+  # Delta Stat Reactive Parameter Variables 
+  group_param_mob <- reactive({input$group_param_mob})
+  #index_param <- reactive({input$index_param})
+  effort_min_param <- reactive({input$effort_min_param})
+  extrapolate_param <- reactive({input$extrapolate_param})
+  returnNA_param <- reactive({input$returnNA_param})
+  rareThres_param <- reactive({input$rareThres_param})
+  nPerm_mob_param <- reactive({input$nPerm_mob_param})
+  boot_groups_param <- reactive({input$boot_groups_param})
+  conf_level_param <- reactive({input$conf_level_param})
   
-  # Number of Individuals GRAPH Output
-  output$mob_n <- renderPlot({
-    plot(mob_stats(), 'N')
-  })
-  
-  # Rarefied Species Richness GRAPH Output
-  output$mob_Sn <- renderPlot({
-    plot(mob_stats(), 'S_n')
-  })
-  
-  # Effective Number ofSpeciesbased on PIE GRAPH Output
-  output$mob_Spie <- renderPlot({
-    plot(mob_stats(), 'S_PIE')
-  })
-  
-  # ALL MoB Metric GRAPH Output
-  output$mob_all <- renderPlot({
-    plot(mob_stats(), multi_panel = TRUE)
-  })
-  
-  output$AllMoBMetricsPlot <- downloadHandler(
-    filename = function() {
-      "AllMoBMetricsPlot.pdf"
-    },
-    content = function(file) {
-      pdf(file)
-      print(
-        plot(mob_stats(), multi_panel = TRUE)
-        )
-      dev.off()
+  # Reference Group Conditional Parameter Rendering
+  output$conditionalInput_return_NA <- renderUI({
+    if(input$extrapolate_param == 'FALSE'){
+      radioButtons("returnNA_param",
+                   label = "Return NA:",
+                   choices = list("True" = 'TRUE',"False" = 'FALSE'),
+                   selected = 'FALSE')
     }
-  )
+  })
   
-  output$IndividualMoBMetricsPlots <- downloadHandler(
+  # Reference Group Conditional Parameter Rendering
+  output$conditionalInput_conf_level <- renderUI({
+    if(input$boot_groups_param == 'TRUE'){
+      numericInput("conf_level_param", "Confidence Level:", 0.95, min = 0, max = 10)
+    }
+  })
+  
+  
+  mob_stats <- eventReactive(input$newMobModel, {
+    get_mob_stats(mob_in(), group_param_mob(), index = c("N", "S", "S_asymp", "f_0", "pct_rare", "PIE", "S_PIE"), effort_min = effort_min_param(), 
+                           extrapolate = extrapolate_param(), return_NA = returnNA_param(),
+                           rare_thres = rareThres_param(), n_perm = nPerm_mob_param(), 
+                           boot_groups = boot_groups_param(), conf_level = conf_level_param())
+  })
+  
+  # Species Richness GRAPH Output
+  output$mob_plot_N <- renderPlot({
+      plot(mob_stats(), "N")
+  })
+  
+  output$mob_plot_S <- renderPlot({
+    plot(mob_stats(), "S")
+  })
+  
+ # output$mob_plot_S_asymp <- renderPlot({
+ #   plot(mob_stats(), "S_asymp")
+ # })
+  
+  #output$mob_plot_f_0 <- renderPlot({
+  #  plot(mob_stats(), "f_0")
+  #})
+  
+  output$mob_plot_pct_rare <- renderPlot({
+    plot(mob_stats(), "pct_rare")
+  })
+  
+  #output$mob_plot_PIE <- renderPlot({
+  #  plot(mob_stats(), "PIE")
+ # })
+  
+  output$mob_plot_S_PIE <- renderPlot({
+    plot(mob_stats(), "S_PIE")
+  })
+  
+  output$MoBMetricsPlot <- downloadHandler(
     filename = function() {
-      "IndividualMoBMetricsPlots.pdf"
+      "MoBMetricsPlot.pdf"
     },
     content = function(file) {
       pdf(file)
       print(
-        plot(mob_stats(), 'S')
-      )
-      print(
-        plot(mob_stats(), 'N')
-      ) 
-      print(
-        plot(mob_stats(), 'S_n')
-      )
-      print(
-        plot(mob_stats(), 'S_PIE')
-      )
+        plot(mob_stats(), "N"),
+        plot(mob_stats(), "S"),
+        plot(mob_stats(), "S_n"),
+        plot(mob_stats(), "S_PIE")
+        )
       dev.off()
     }
   )
@@ -800,80 +829,67 @@ server <- function(input, output) {
     }
   )
  
-  
-######################################################################################################################## 
-                                            # MOB METRIC CODE OUTPUT # 
- 
-  # Species Richness CODE Output 
-  output$s_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "mob_stats <- get_mob_stats(mob_in, 'group')",
-          "<br>",
-          "<br>",
-          "plot(mob_stats, 'S')")
-  })
-  
-  # Number of Individuals CODE Output
-  output$n_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "mob_stats <- get_mob_stats(mob_in, 'group')",
-          "<br>",
-          "<br>",
-          "plot(mob_stats, 'N')")
-  })
-  
-  # Rarefied Species Richness CODE Output
-  output$sn_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>",
-          "<br>",
-          "mob_stats <- get_mob_stats(mob_in, 'group')",
-          "<br>",
-          "<br>",
-          "plot(mob_stats, 'S_n')")
-  })
-  
-  # Effective Number ofSpeciesbased on PIE CODE Output
-  output$spie_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "mob_stats <- get_mob_stats(mob_in, 'group')",
-          "<br>",
-          "<br>",
-          "plot(mob_stats, 'S_PIE')")
-  
-  })
-  
-  # All MoB Metrics CODE Output
-  output$all_mob_code <- renderText({
-    # <br> stands for break line in code
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "mob_stats <- get_mob_stats(mob_in, 'group')",
-          "<br>",
-          "<br>",
-          "plot(mob_stats, multi_panel = TRUE)")
-    
-  })
-  
+
 ######################################################################################################################## 
                                              # DELTA STATS PLOT OUTPUT #   
-
-  output$delta_plot <- renderPlot({
-    plot(delta_stats(), 'invaded', 'uninvaded')
-    
+  
+  # Delta Stat Reactive Parameter Variables 
+  group_param_delta <- reactive({input$group_param_delta})
+  tests_param <- reactive({input$tests_param})
+  type_param <- reactive({input$type_param})
+  stats_param <- reactive({input$stats_param})
+  inds_param <- reactive({input$inds_param})
+  logScale_param <- reactive({input$logScale_param})
+  denStat_param <- reactive({input$denStat_param})
+  nPerm_param <- reactive({input$nPerm_param})
+  overallP_param <- reactive({input$overallP_param})
+  #treatGroup_param <- reactive({input$treatGroup_param})
+  
+  
+  group_param_delta_name <- isolate(input$group_param_delta)
+  
+  # Reference Group Conditional Parameter Rendering
+  #output$conditionalInput_refGroup <- renderUI({
+  #  if(input$type_param == 'discrete'){
+  #    selectInput("refGroup_param", "Enter Reference Group Name: ", choices = levels(unique(plot_data$group)))
+  #  }
+  #})
+  
+  output$conditionalInput_delta_treatGroup <- renderUI({
+    if (is.null(plot_data) == FALSE){
+      whichcol = input$group_param_delta
+      selectInput("treatGroup_param", "Treatment Group Name: ", choices = levels(unique(plot_data$whichcol)))
+    }
   })
   
+  refGroup_param <- reactive({
+    if(input$type_param == 'discrete'){
+      refGroup_param <- input$refGroup_param
+      
+    }else if(input$type_param != 'discrete'){
+      refGroup_param <- NULL
+    }
+    return(refGroup_param)
+  })
+  
+  # Reactive Delta Stats 'get_delta_stats' Function Call
+  delta_stats <- eventReactive(input$newDeltaModel, {get_delta_stats(mob_in(), group_param_delta(), ref_group = refGroup_param(), 
+                                          tests = tests_param(),
+                                          type = type_param(),
+                                          stats = NULL, inds = NULL,
+                                          log_scale = logScale_param(),
+                                          density_stat = denStat_param(),
+                                          n_perm=nPerm_param(), overall_p = overallP_param()
+                                          ) 
+  })
+  
+  # Delta Stats Plot Rendering
+  output$delta_plot <- renderPlot({
+    plot(delta_stats(), stat = 'b1')
+    # sapply(treatGroup_param(), tolower), refGroup_param()
+  })
+  
+  # Delta Stats Current Plot Download Handler
   output$DeltaStatsPlot <- downloadHandler(
     filename = function() {
       "DeltaStatsPlot.pdf"
@@ -881,7 +897,7 @@ server <- function(input, output) {
     content = function(file) {
       pdf(file)
       print(
-        plot(delta_stats(), 'invaded', 'uninvaded')
+        plot(delta_stats(), stat = 'b1')
       )
       dev.off()
     }
@@ -889,12 +905,19 @@ server <- function(input, output) {
 
 ######################################################################################################################## 
                                    # DOWNLOAD BUTTONS FOR DELTA STATS STATISTICS #     
-  
+  # function that contains all test types automatically
+  delta_stats_all <- reactive(get_delta_stats(mob_in(), group_param_delta(), ref_group = refGroup_param(), 
+                                              tests = c('SAD', 'N', 'agg'),
+                                              type = type_param(),
+                                              log_scale = logScale_param(),
+                                              density_stat = denStat_param(),
+                                              n_perm=nPerm_param(), overall_p = overallP_param()))
+   
   # SAD Test Download Button
   output$download_delta_SAD <- downloadHandler(
     filename = "delta_SAD_test.csv",
     content = function(file) {
-      write.csv(delta_stats()$SAD, file)
+      write.csv(delta_stats_all()$SAD, file)
     }
   )
   
@@ -902,7 +925,7 @@ server <- function(input, output) {
   output$download_delta_N <- downloadHandler(
     filename = "delta_N_test.csv",
     content = function(file) {
-      write.csv(delta_stats()$N, file)
+      write.csv(delta_stats_all()$N, file)
     }
   )
   
@@ -910,7 +933,7 @@ server <- function(input, output) {
   output$download_delta_agg <- downloadHandler(
     filename = "delta_agg_test.csv",
     content = function(file) {
-      write.csv(delta_stats()$agg, file)
+      write.csv(delta_stats_all()$agg, file)
     }
   )
   
@@ -918,7 +941,7 @@ server <- function(input, output) {
   output$download_rare_ind <- downloadHandler(
     filename = "delta_indiv_rare.csv",
     content = function(file) {
-      write.csv(delta_stats()$indiv_rare, file)
+      write.csv(delta_stats_all()$indiv_rare, file)
     }
   )
   
@@ -926,25 +949,93 @@ server <- function(input, output) {
   output$download_rare_sample <- downloadHandler(
     filename = "delta_sample_rare.csv",
     content = function(file) {
-      write.csv(delta_stats()$sample_rare, file)
+      write.csv(delta_stats_all()$sample_rare, file)
     }
   )
+
   
-######################################################################################################################## 
-                                          # DELTA STATS CODE OUTPUT # 
+  ######################################################################################################################## 
+                                                      # R MARKDOWN FILE GENERATOR # 
   
-  output$delta_code <- renderText({
-    paste("mob_in <- make_mob_in(community_matrix_FILENAMEHERE, plot_attribute_FILENAMEHERE)",
-          "<br>", 
-          "<br>",
-          "delta_stats <- get_delta_stats(mob_in, 'group', ref_group = 'uninvaded', type='discrete', log_scale=TRUE, n_perm=20)",
-          "<br>",
-          "<br>",
-          "plot(delta_stats, 'invaded', 'uninvaded')")
+  output$report <- downloadHandler(
+    # For PDF output, change this to "report.pdf"
+    filename = "report.html",
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions to the current working dir (which
+      # can happen when deployed).
+      tempReport <- file.path(tempdir(), "report.Rmd")
+      file.copy("report.Rmd", tempReport, overwrite = TRUE)
+      
+      # Set up parameters to pass to Rmd document
+      #params <- list(rare_method <- input$rare_method, pool_val = pool_rare_val, rare_legend <- input$rare_legend)
+      if(input$rare_method == 'indiv'){
+        pool_rare_val <- input$pool_rare
+      }else{
+        pool_rare_val <- TRUE
+      }
+      
+      if(input$type_param == 'discrete'){
+        refGroup_param <- input$refGroup_param
+        
+      }else{
+        refGroup_param <- NULL
+      }
+      
     
-  })
-  
+      if(input$sample_data == 'TRUE'){
+        comm <- comm_data
+        plot_attr <- plot_data
+          
+      }
+      else{
+        comm <- callModule(csvFile, "comm")
+        plot_attr <- callModule(csvFile, "plot_attr")
+      }
+      
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                       
+                        params = list(#comm_data = comm,
+                                      #plot_attr_data = plot_attr,
+                                      
+                                      rare_group = input$group_param_rare,
+                                      rare_method = input$rare_method, 
+                                      pool_val = pool_rare_val, 
+                                      rare_legend = input$rare_legend,
+                                      
+                                      abu_group = input$group_param_mob,
+                                      abu_type = input$abu_type, 
+                                      pool_abu = input$pool_abu, 
+                                      abu_legend = input$abu_legend,
+                                      
+                                      group_param_mob = input$group_param_mob,
+                                      effort_min_param = input$effort_min_param,
+                                      extrapolate_param = input$extrapolate_param,
+                                      returnNA_param = input$returnNA_param,
+                                      rareThres_param = input$rareThres_param,
+                                      nPerm_mob_param = input$nPerm_mob_param,
+                                      boot_groups_param = input$boot_groups_param,
+                                      conf_level_param = input$conf_level_param,
+                                      
+                                      group_param_delta = input$group_param_delta,
+                                      tests_param = input$tests_param,
+                                      type_param = input$type_param,
+                                      logScale_param = input$logScale_param,
+                                      denStat_param = input$denStat_param,
+                                      nPerm_param = input$nPerm_param,
+                                      overallP_param = input$overallP_param,
+                                      treatGroup_param = input$treatGroup_param,
+                                      RefGroup_param = refGroup_param),
+                        
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
+
 }
 
-
 shinyApp(ui = ui, server = server)
+
