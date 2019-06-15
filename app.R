@@ -1,17 +1,14 @@
-# install_github('MoBiodiv/mobr', ref = 'dev')
+install_github('MoBiodiv/mobr', ref = 'dev')
+
 library(mobr)
 library(shiny)
 library(shinydashboard)
-library(shinyjqui)
-library(shinycssloaders)
-library(RCurl)
-library(rmarkdown)
+library(shinyjqui) # under MIT licensing
+library(shinycssloaders) # under GNU-3 licensing
+library(RCurl) # under 3-Clause BSD Licensing
+#library(rmarkdown)
 
 # Outside code for CSV file read in used in ui
-
-# Create empty file for session code storage
-# write(line,file="myfile",append=TRUE)
-file.create("sessionCode.csv")
 
 # Module UI function
 csvFileInput <- function(id, label = "CSV file") {
@@ -104,7 +101,7 @@ ui <- dashboardPage(
                 
                 # br() stands for break line in code
                 br(),
-                h4(icon("table"),"DataInput"),
+                h4(icon("table"),"Data Input"),
                 "- Where you will enter your community matrix and plot data as csv files", 
                 br(), 
                 br(), 
@@ -169,18 +166,7 @@ ui <- dashboardPage(
                   "Thor Engel - email: thore.engel@idiv.de",
                   br(),
                   "Caroline Oliver - email: olivercs@g.cofc.edu"
-                  ),
-                
-                box(
-                  status = "primary",
-                  width = 4,
-                  h3(icon("users"), "R Markdown File Generator"),
-                  #radioButtons('format', 'Document format', c('PDF', 'HTML', 'Word'), inline = TRUE),
-                  downloadButton("report", "Generate report"),
-                  br(),
-                  br(),
-                  h4('Please note that the creation of the file may take a few minutes to complete.')
-                )
+                  )
               )
       ),
 
@@ -201,7 +187,15 @@ ui <- dashboardPage(
                               selected = 'FALSE'),
                   
                   uiOutput("conditionalInput_commData"),
-                  uiOutput("conditionalInput_plotData")
+                  uiOutput("conditionalInput_plotData"),
+                  
+                  uiOutput("conditionalInput_coordNamesNumeric"),
+                  
+                  uiOutput("conditionalInput_SingleCoordNameParam"),
+                  uiOutput("conditionalInput_LatitudeParam"),
+                  uiOutput("conditionalInput_LongitudeParam")
+                  
+                  
                 )
         )
       ),
@@ -221,7 +215,7 @@ tabItem(tabName = "rare_tab",
         fluidRow(
           box(
             status = "primary",
-            width = 5,
+            width = 4,
             # Title of the box
             title = "Rarefaction Parameter Selection",
             
@@ -241,8 +235,6 @@ tabItem(tabName = "rare_tab",
                         choices = list("Top Left" = 'topleft',"Bottom Left" = 'bottomleft',"Top Right" = 'topright', "Bottom Right" = 'bottomright'),
                         selected = 'topleft'),
             
-            actionButton("newRareModel", "Calculate Rarefaction Plot"),
-            
             br(),
             br(),
             
@@ -254,17 +246,17 @@ tabItem(tabName = "rare_tab",
           box(
             status = "primary",
             # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-            width = 6,
+            width = 8,
             
             # 'Height' refers to how many pixels high your box will be (different than width implementation)
-            height = "750px",
+            height = "800px",
             
             # Title of the box
             title = "Rarefaction Plot",
             
             # the plotOutput funtion parameter corresponds to the name of an output code that creates the plot in the server portion of the app
             # height of graph must be smaller (less pixels) than box height to fit appropriately
-            withSpinner(plotOutput('rarefaction_plot', height = "695px"))
+            withSpinner(plotOutput('rarefaction_plot', height = "725px"))
           )
         )
 ),
@@ -280,7 +272,7 @@ tabItem(tabName = "abu_tab",
         fluidRow(
           box(
             status = "primary",
-            width = 5,
+            width = 4,
             # Title of the box
             title = "Abundance Parameter Selection",
             
@@ -301,8 +293,6 @@ tabItem(tabName = "abu_tab",
                         choices = list("Top Left" = 'topleft',"Bottom Left" = 'bottomleft',"Top Right" = 'topright', "Bottom Right" = 'bottomright'),
                         selected = 'topleft'),
             
-            actionButton("newAbuModel", "Calculate Abundance Plot"),
-            
             br(),
             br(),
             
@@ -314,17 +304,17 @@ tabItem(tabName = "abu_tab",
           box(
             status = "primary",
             # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-            width = 6,
+            width = 8,
             
             # 'Height' refers to how many pixels high your box will be (different than width implementation)
-            height = "750px",
+            height = "800px",
             
             # Title of the box
             title = "Abundance Plot",
             
             # the plotOutput funtion parameter corresponds to the name of an output code that creates the plot in the server portion of the app
             # height of graph must be smaller (less pixels) than box height to fit appropriately
-            withSpinner(plotOutput('abundance_plot', height = "695px"))
+            withSpinner(plotOutput('abundance_plot', height = "725px"))
           )
         )
         ),
@@ -345,13 +335,6 @@ tabItem(tabName = "abu_tab",
                     width = 4,
                     
                     uiOutput("conditionalInput_mob_groupParam"),
-                    
-                    #selectInput("index_param",
-                    #            label = "Select Index Type:",
-                    #            choices = list("N" = "N","S" = "S","S_n" = "S_n", "S_asymp" = "S_asymp","f_0" = "f_0","pct_rare" = "pct_rare","PIE" = "PIE","S_PIE" = "S_PIE"),
-                    #            selected = "N"),
-                    # , multiple = TRUE
-                    
                     numericInput("effort_min_param", "Rarefied Richness Calculation Minimum # of Individuals:", 5, min = 1, max = 100000),
                     
                     selectInput("extrapolate_param",
@@ -372,27 +355,18 @@ tabItem(tabName = "abu_tab",
                     
                     uiOutput("conditionalInput_conf_level"),
                     
-                    actionButton("newMobModel", "Calculate MoB Plot"),
-                    
-                    br(),
-                    br(),
-                    
-                    
-                    h4("Download Current Plot"),
-                    
-                    downloadButton(outputId = "MobMetricsPlot", label = "Download Current Plot")
+                    actionButton("newMobModel", "Calculate MoB Plot")
                   ),
                 
                   tabBox(
                     width = 8,
-                    title = "MoB Metrics Plot", height = "350px",
-                    tabPanel("N", withSpinner(plotOutput('mob_plot_N'))),
-                    tabPanel("S", withSpinner(plotOutput('mob_plot_S'))),
-                    #tabPanel("S_asymp", withSpinner(plotOutput('mob_plot_S_asymp'))),
-                    #tabPanel("f_0", withSpinner(plotOutput('mob_plot_f_0'))),
-                    tabPanel("pct_rare", withSpinner(plotOutput('mob_plot_pct_rare'))),
-                    #tabPanel("PIE", withSpinner(plotOutput('mob_plot_PIE'))),
-                    tabPanel("S_PIE", withSpinner(plotOutput('mob_plot_S_PIE')))
+                    height = "800px",
+                    title = "MoB Metrics Plot",
+                    tabPanel("N", withSpinner(plotOutput('mob_plot_N', height = '750px'))),
+                    tabPanel("S", withSpinner(plotOutput('mob_plot_S', height = '750px'))),
+                    tabPanel("f_0", withSpinner(plotOutput('mob_plot_f_0', height = '750px'))),
+                    tabPanel("pct_rare", withSpinner(plotOutput('mob_plot_pct_rare', height = '750px'))),
+                    tabPanel("S_PIE", withSpinner(plotOutput('mob_plot_S_PIE', height = '750px')))
                 )
               )
         ),
@@ -449,68 +423,18 @@ tabItem(tabName = "abu_tab",
                                choices = list("True" = 'TRUE',"False" = 'FALSE'),
                                selected = 'FALSE'),
                   
-                  actionButton("newDeltaModel", "Calculate Delta Plot"),
-                  
-                  br(),
-                  br(),
-                  
-                  h4("Download Current Plot"),
-                  
-                  downloadButton(outputId = "DeltaStatsPlot", label = "Download Current Plot")
+                  actionButton("newDeltaModel", "Calculate Delta Plot")
                 ),
                 box(
                   status = "primary",
                   title = "Delta Stats",
                   
                   # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 7,
+                  width = 8,
+                  height = "800px",
                   
-                  withSpinner(plotOutput('delta_plot'))
+                  withSpinner(plotOutput('delta_plot', height = "725px"))
                   
-                )
-              ),
-              
-              
-              # DOWNLOAD BUTTON BOXES
-              fluidRow(
-                
-                # TEST BOX
-                box(
-                  status = "primary",
-                  title = "Download Delta Stats Tests Data to CSV",
-                  
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 4,
-                  
-                  # SAD TEST DATA button
-                  downloadButton('download_delta_SAD', "Download SAD Test Data"),
-                  br(),
-                  br(),
-                  
-                  # N TEST DATA button
-                  downloadButton('download_delta_N', "Download N Test Data"),
-                  br(),
-                  br(),
-                  
-                  # agg TEST DATA button
-                  downloadButton('download_delta_agg', "Download agg Test Data")
-                ),
-                
-                # RAREFACTION BOX
-                box(
-                  status = "primary",
-                  title = "Download Delta Stats Rarefaction Data to CSV",
-                  
-                  # 'Width' refers to how much of the screen you would like the box to take up (max = 12)
-                  width = 4,
-                  
-                  # Individual Rarefaction Data button
-                  downloadButton('download_rare_ind', "Download Individual Rarefaction Data"),
-                  br(),
-                  br(),
-                  
-                  # Sample Rarefaction Data button
-                  downloadButton('download_rare_sample', "Download Sample Rarefaction Data")
                 )
               )
       )
@@ -588,6 +512,39 @@ server <- function(input, output) {
     }
   })
   
+  output$conditionalInput_coordNamesNumeric <- renderUI({
+    if(input$sample_data == 'FALSE'){
+      # coord_names numerical param
+      selectInput("coord_namesNumeric",
+                  label = "Select Number of Coordinate Names:",
+                  choices = list("0" = 0,"1" = 1,"2" = 2),
+                  selected = 0)
+    }
+  })
+  
+  output$conditionalInput_SingleCoordNameParam <- renderUI({
+    if(input$coord_namesNumeric  == 1){
+      # csvFileInput command for Plot Attribute Data
+      textInput("mobIn_singleCoordParam", label = "Enter Single Coordinate Name:", value = "NULL")
+    }
+  })
+  
+  output$conditionalInput_LatitudeParam <- renderUI({
+    if(input$coord_namesNumeric  == 2){
+      # csvFileInput command for Plot Attribute Data
+      textInput("mobIn_latitude_param", label = "Enter Latitude Column Name:", value = "NULL")
+    }
+  })
+  
+  output$conditionalInput_LongitudeParam <- renderUI({
+    if(input$coord_namesNumeric  == 2){
+      # csvFileInput command for Plot Attribute Data
+      textInput("mobIn_longitude_param", label = "Enter Longitude Column Name:", value = "NULL")
+    }
+  })
+  
+  
+  
   mob_in <- reactive({
     if(input$sample_data == 'TRUE'){
       comm <- comm_data
@@ -600,7 +557,18 @@ server <- function(input, output) {
       comm <- callModule(csvFile, "comm")
       plot_attr <- callModule(csvFile, "plot_attr")
       
-      mob_in <- reactive(make_mob_in(comm(), plot_attr()))
+      if(input$coord_namesNumeric  == 0){
+        coord_names_param = NULL
+      }
+      else if(input$coord_namesNumeric  == 1){
+        coord_names_param = c(input$mobIn_singleCoordParam)
+      }
+      else if(input$coord_namesNumeric  == 2){
+        # longitude supplied first and latitude is supplied second in accordance with the make_mob_in documentation
+        coord_names_param = c(input$mobIn_longitude_param, input$mobIn_latitude_param)
+      }
+      
+      mob_in <- reactive(make_mob_in(comm(), plot_attr(), coord_names = coord_names_param))
     }
     return(mob_in())
   })
@@ -645,10 +613,6 @@ server <- function(input, output) {
     return(pool_rare_val)
   })
   
-  #rare_plot <- eventReactive(input$newRareModel, plot_rarefaction(mob_in(), rare_group_variable(),
-  #                                                               rare_method(), pooled = pool_rare_val(), 
-  #                                                               leg_loc = rare_legend()))
-  
   # Rarefaction Plot Output
   output$rarefaction_plot <- renderPlot({plot_rarefaction(mob_in(), rare_group_variable(),
                                                           rare_method(), pooled = pool_rare_val(), 
@@ -656,12 +620,12 @@ server <- function(input, output) {
 
   output$rare_plot <- downloadHandler(
     filename = function() {
-      "ExploratoryAnalysisPlots.pdf"
+      "ExploratoryAnalysisPlots_Rarefaction.pdf"
     },
     content = function(file) {
       pdf(file)
       print(
-        plot_rarefaction(mob_in(), 'group', rare_method(), pooled = pool_rare_val(), leg_loc = rare_legend())
+        plot_rarefaction(mob_in(), rare_group_variable(), rare_method(), pooled = pool_rare_val(), leg_loc = rare_legend())
       )
       dev.off()
     }
@@ -682,12 +646,12 @@ server <- function(input, output) {
   
   output$abu_plot <- downloadHandler(
     filename = function() {
-      "ExploratoryAnalysisPlots.pdf"
+      "ExploratoryAnalysisPlots_Abundance.pdf"
     },
     content = function(file) {
       pdf(file)
       print(
-        plot_abu(mob_in(), 'group', type = abu_type(), pooled = pool_abu(), log='x', leg_loc = abu_legend())
+        plot_abu(mob_in(), abu_group_variable(), type = abu_type(), pooled = pool_abu(), log='x', leg_loc = abu_legend())
       )
       dev.off()
     }
@@ -726,110 +690,42 @@ server <- function(input, output) {
   
   
   mob_stats <- eventReactive(input$newMobModel, {
-    get_mob_stats(mob_in(), group_param_mob(), index = c("N", "S", "S_asymp", "f_0", "pct_rare", "PIE", "S_PIE"), effort_min = effort_min_param(), 
+    get_mob_stats(mob_in(), group_param_mob(), index = c("N", "S", "f_0", "pct_rare","S_PIE"), effort_samples = 100, effort_min = effort_min_param(), 
                            extrapolate = extrapolate_param(), return_NA = returnNA_param(),
                            rare_thres = rareThres_param(), n_perm = nPerm_mob_param(), 
                            boot_groups = boot_groups_param(), conf_level = conf_level_param())
+                          #   "N", "S", "S_n", "S_asymp", "f_0", "pct_rare", "PIE", "S_PIE"
   })
+  
+  mob_stats2 <- function(){
+    get_mob_stats(mob_in(), group_param_mob(), index = c("N", "S", "f_0", "pct_rare","S_PIE"), effort_samples = 100, effort_min = effort_min_param(), 
+                  extrapolate = extrapolate_param(), return_NA = returnNA_param(),
+                  rare_thres = rareThres_param(), n_perm = nPerm_mob_param(), 
+                  boot_groups = boot_groups_param(), conf_level = conf_level_param())
+    #   "N", "S", "S_n", "S_asymp", "f_0", "pct_rare", "PIE", "S_PIE"
+  }
   
   # Species Richness GRAPH Output
   output$mob_plot_N <- renderPlot({
       plot(mob_stats(), "N")
-  })
+  })#, height = "750px")
   
   output$mob_plot_S <- renderPlot({
     plot(mob_stats(), "S")
-  })
+  })#, height = "750px")
   
- # output$mob_plot_S_asymp <- renderPlot({
- #   plot(mob_stats(), "S_asymp")
- # })
-  
-  #output$mob_plot_f_0 <- renderPlot({
-  #  plot(mob_stats(), "f_0")
-  #})
+  output$mob_plot_f_0 <- renderPlot({
+    plot(mob_stats(), "f_0", multi_panel = TRUE)
+  })#, height = "750px")
   
   output$mob_plot_pct_rare <- renderPlot({
     plot(mob_stats(), "pct_rare")
-  })
-  
-  #output$mob_plot_PIE <- renderPlot({
-  #  plot(mob_stats(), "PIE")
- # })
+  })#, height = "750px")
   
   output$mob_plot_S_PIE <- renderPlot({
     plot(mob_stats(), "S_PIE")
-  })
-  
-  output$MoBMetricsPlot <- downloadHandler(
-    filename = function() {
-      "MoBMetricsPlot.pdf"
-    },
-    content = function(file) {
-      pdf(file)
-      print(
-        plot(mob_stats(), "N"),
-        plot(mob_stats(), "S"),
-        plot(mob_stats(), "S_n"),
-        plot(mob_stats(), "S_PIE")
-        )
-      dev.off()
-    }
-  )
-  
-######################################################################################################################## 
-                                        # MOB METRIC STATISTICAL OUTPUT # 
-                        # FOLLOWED BY CORRESPONDING DOWNLOAD BUTTON CODE - downloadHandler #  
-
-  # GROUPS STATS Statistical Output   
-  output$mob_groups_stats = renderPrint({
-    mob_stats()$groups_stats
-  })
-  
-  # GROUPS STATS CSV download button Output 
-  output$download_GS <- downloadHandler(
-    filename = "mob_groups_stats.csv",
-    content = function(file) {
-      write.csv(mob_stats()$groups_stats, file)
-    }
-  )
-  
-  # SAMPLES TESTS Statistical Output  
-  output$mob_samples_tests = renderPrint({
-    mob_stats()$samples_tests
-  })
-  
-  # SAMPLES TESTS CSV download button Output
-  output$download_ST <- downloadHandler(
-    filename = "mob_samples_tests.csv",
-    content = function(file) {
-      write.csv(mob_stats()$samples_tests, file)
-    }
-  )
-  
-  # GROUPS TESTS Statistical Output
-  output$mob_groups_tests = renderPrint({
-    mob_stats()$groups_tests
-  })
-  
-  # GROUPS TESTS CSV download button Output
-  output$download_GT <- downloadHandler(
-    filename = "mob_groups_tests.csv",
-    content = function(file) {
-      write.csv(mob_stats()$groups_tests, file)
-    }
-  )
-  
-  # SAMPLES STATS CSV download button Output
-  # NO Statistical Output in app for SAMPLES STATS
-  output$download_SS <- downloadHandler(
-    filename = "mob_samples_stats.csv",
-    content = function(file) {
-      write.csv(mob_stats()$samples_stats, file)
-    }
-  )
+  })#, height = "750px")
  
-
 ######################################################################################################################## 
                                              # DELTA STATS PLOT OUTPUT #   
   
@@ -843,17 +739,9 @@ server <- function(input, output) {
   denStat_param <- reactive({input$denStat_param})
   nPerm_param <- reactive({input$nPerm_param})
   overallP_param <- reactive({input$overallP_param})
-  #treatGroup_param <- reactive({input$treatGroup_param})
   
   
   group_param_delta_name <- isolate(input$group_param_delta)
-  
-  # Reference Group Conditional Parameter Rendering
-  #output$conditionalInput_refGroup <- renderUI({
-  #  if(input$type_param == 'discrete'){
-  #    selectInput("refGroup_param", "Enter Reference Group Name: ", choices = levels(unique(plot_data$group)))
-  #  }
-  #})
   
   output$conditionalInput_delta_treatGroup <- renderUI({
     if (is.null(plot_data) == FALSE){
@@ -886,156 +774,8 @@ server <- function(input, output) {
   # Delta Stats Plot Rendering
   output$delta_plot <- renderPlot({
     plot(delta_stats(), stat = 'b1')
-    # sapply(treatGroup_param(), tolower), refGroup_param()
   })
-  
-  # Delta Stats Current Plot Download Handler
-  output$DeltaStatsPlot <- downloadHandler(
-    filename = function() {
-      "DeltaStatsPlot.pdf"
-    },
-    content = function(file) {
-      pdf(file)
-      print(
-        plot(delta_stats(), stat = 'b1')
-      )
-      dev.off()
-    }
-  )
-
-######################################################################################################################## 
-                                   # DOWNLOAD BUTTONS FOR DELTA STATS STATISTICS #     
-  # function that contains all test types automatically
-  delta_stats_all <- reactive(get_delta_stats(mob_in(), group_param_delta(), ref_group = refGroup_param(), 
-                                              tests = c('SAD', 'N', 'agg'),
-                                              type = type_param(),
-                                              log_scale = logScale_param(),
-                                              density_stat = denStat_param(),
-                                              n_perm=nPerm_param(), overall_p = overallP_param()))
-   
-  # SAD Test Download Button
-  output$download_delta_SAD <- downloadHandler(
-    filename = "delta_SAD_test.csv",
-    content = function(file) {
-      write.csv(delta_stats_all()$SAD, file)
-    }
-  )
-  
-  # N Test Download Button
-  output$download_delta_N <- downloadHandler(
-    filename = "delta_N_test.csv",
-    content = function(file) {
-      write.csv(delta_stats_all()$N, file)
-    }
-  )
-  
-  # agg Test Download Button
-  output$download_delta_agg <- downloadHandler(
-    filename = "delta_agg_test.csv",
-    content = function(file) {
-      write.csv(delta_stats_all()$agg, file)
-    }
-  )
-  
-  # Individual Rarefaction Data Download Button
-  output$download_rare_ind <- downloadHandler(
-    filename = "delta_indiv_rare.csv",
-    content = function(file) {
-      write.csv(delta_stats_all()$indiv_rare, file)
-    }
-  )
-  
-  # Sample Rarefaction Data Download Button
-  output$download_rare_sample <- downloadHandler(
-    filename = "delta_sample_rare.csv",
-    content = function(file) {
-      write.csv(delta_stats_all()$sample_rare, file)
-    }
-  )
-
-  
-  ######################################################################################################################## 
-                                                      # R MARKDOWN FILE GENERATOR # 
-  
-  output$report <- downloadHandler(
-    # For PDF output, change this to "report.pdf"
-    filename = "report.html",
-    content = function(file) {
-      # Copy the report file to a temporary directory before processing it, in
-      # case we don't have write permissions to the current working dir (which
-      # can happen when deployed).
-      tempReport <- file.path(tempdir(), "report.Rmd")
-      file.copy("report.Rmd", tempReport, overwrite = TRUE)
-      
-      # Set up parameters to pass to Rmd document
-      #params <- list(rare_method <- input$rare_method, pool_val = pool_rare_val, rare_legend <- input$rare_legend)
-      if(input$rare_method == 'indiv'){
-        pool_rare_val <- input$pool_rare
-      }else{
-        pool_rare_val <- TRUE
-      }
-      
-      if(input$type_param == 'discrete'){
-        refGroup_param <- input$refGroup_param
-        
-      }else{
-        refGroup_param <- NULL
-      }
-      
-    
-      if(input$sample_data == 'TRUE'){
-        comm <- comm_data
-        plot_attr <- plot_data
-          
-      }
-      else{
-        comm <- callModule(csvFile, "comm")
-        plot_attr <- callModule(csvFile, "plot_attr")
-      }
-      
-      # Knit the document, passing in the `params` list, and eval it in a
-      # child of the global environment (this isolates the code in the document
-      # from the code in this app).
-      rmarkdown::render(tempReport, output_file = file,
-                       
-                        params = list(#comm_data = comm,
-                                      #plot_attr_data = plot_attr,
-                                      
-                                      rare_group = input$group_param_rare,
-                                      rare_method = input$rare_method, 
-                                      pool_val = pool_rare_val, 
-                                      rare_legend = input$rare_legend,
-                                      
-                                      abu_group = input$group_param_mob,
-                                      abu_type = input$abu_type, 
-                                      pool_abu = input$pool_abu, 
-                                      abu_legend = input$abu_legend,
-                                      
-                                      group_param_mob = input$group_param_mob,
-                                      effort_min_param = input$effort_min_param,
-                                      extrapolate_param = input$extrapolate_param,
-                                      returnNA_param = input$returnNA_param,
-                                      rareThres_param = input$rareThres_param,
-                                      nPerm_mob_param = input$nPerm_mob_param,
-                                      boot_groups_param = input$boot_groups_param,
-                                      conf_level_param = input$conf_level_param,
-                                      
-                                      group_param_delta = input$group_param_delta,
-                                      tests_param = input$tests_param,
-                                      type_param = input$type_param,
-                                      logScale_param = input$logScale_param,
-                                      denStat_param = input$denStat_param,
-                                      nPerm_param = input$nPerm_param,
-                                      overallP_param = input$overallP_param,
-                                      treatGroup_param = input$treatGroup_param,
-                                      RefGroup_param = refGroup_param),
-                        
-                        envir = new.env(parent = globalenv())
-      )
-    }
-  )
-
 }
-
+  
 shinyApp(ui = ui, server = server)
 

@@ -24,14 +24,14 @@ from the R terminal:
 
 ```r
 install.packages(c('shiny', 'shinydashboard', 'shinyjqui',
-                   'shinycssloaders', 'devtools'))
-devtools::install_github('mobiodiv/mobr')
+                   'shinycssloaders', 'devtools', 'RCurl'))
+devtools::install_github('MoBiodiv/mobr', ref = 'dev')
 ```
 
 Once those dependencies are installed you can run the app from the R terminal using:
 
 ```r
-shiny::runGitHub("mobiodiv/mobr_app", ref="shiny")
+shiny::runGitHub("caroliver/mobr_app", ref="working_app")
 ```
 
 ## License
