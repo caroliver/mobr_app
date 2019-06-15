@@ -1,3 +1,11 @@
+# Loading necessary libraries for application
+library(mobr)
+library(shiny)
+library(shinydashboard)
+library(shinyjqui) # under MIT licensing
+library(shinycssloaders) # under GNU-3 licensing
+library(RCurl) # under 3-Clause BSD Licensing
+
 # Outside code for CSV file read in used in ui
 
 # Module UI function
